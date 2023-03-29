@@ -29,8 +29,9 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
+        'id',
         'password',
-        'remember_token',
+        'updated_at'
     ];
 
     /**
@@ -41,4 +42,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function accessToken() {
+        return $this->hasOne(AccessToken::class, 'user_id', 'id'); //first foreign, then other
+    }
 }
