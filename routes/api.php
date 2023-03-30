@@ -22,8 +22,7 @@ Route::post("logout", [UserController::class, "logout"]);
 
 Route::middleware('api.authentication')->group(function () {
     Route::get("datasets/receive", [DatasetsController::class, "receive"]);
-    Route::get("datasets/all", [DatasetsController::class, "all"]);
-    Route::get("datasets/debtors", [DatasetsController::class, "debtors"]);
-    Route::get("datasets/reminders", [DatasetsController::class, "reminders"]);
+    Route::get("datasets/read", [DatasetsController::class, "read"]);
+    Route::get("datasets/sendMail", [DatasetsController::class, "sendMail"]);
 });
 
