@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\ExecutiveAuthority;
 use App\Models\Dataset;
 use App\Models\Resource;
+use App\Models\Statistic;
 use App\Mail\DebtorNotification;
 use App\Mail\ReminderNotification;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,7 @@ class DatasetsController extends Controller
         DB::table('executive_authorities')->where('user_id', '=', $auth->user->id)->delete();
         DB::table('datasets')->where('user_id', '=', $auth->user->id)->delete();
         DB::table('resources')->where('user_id', '=', $auth->user->id)->delete();
+        DB::table('statistics')->where('user_id', '=', $auth->user->id)->delete();
 
         //setting executive_authorities
         $organizationsFromAPI = json_decode(file_get_contents('https://data.lutskrada.gov.ua/api/3/action/organization_list?all_fields=true'), true);
@@ -84,9 +86,8 @@ class DatasetsController extends Controller
                 ]);
             }
         }
-        $datasetsFromDB = DB::table('datasets')->where('user_id', '=', $auth->user->id)->get()->toArray();
 
-        return response()->json($datasetsFromDB);
+        $this->setStatistic($auth->user->id);
     }
 
     /**
@@ -196,8 +197,24 @@ class DatasetsController extends Controller
                 break;
         }
 
-        $outputArray = $this->sortDatasets($datasets->get()->toArray());
-        $outputArray["statistic"] = $this->getStatistic($userId);
+        //initial values after receiving datasets
+        $statistic["initial"] = [];
+        //actual values after filtering datasets, etc
+        $statistic["actual"] = [];
+
+        /**
+         * TODO:intendent datasets instead of user_id binding
+         */
+        $outputArray = $this->sortDatasetsAndWriteStatistic($datasets->get()->toArray(), $statistic["actual"]);
+
+        //write statistic
+        $statistic["initial"] = Statistic::where('user_id', $userId)->get()->toArray();
+        $statistic["initial"] = $statistic["initial"][0];
+        $statistic["initial"]["created_at"] = new Carbon($statistic["initial"]["created_at"]);
+        $statistic["initial"]["created_at"]->tz = 'Europe/Kyiv';
+        $statistic["initial"]["created_at"] = $statistic["initial"]["created_at"]->format('d.m.Y H:i');
+        $outputArray["statistic"] = $statistic;
+
         return response()->json($outputArray);
     }
 
@@ -252,8 +269,11 @@ class DatasetsController extends Controller
             }
         }
 
-        return count($result["error"]) == 0 ? response($result, 200) : response($result, 422);
+        return response($result, 200);
+    }
 
+    public function createReport(Request $request) {
+        return;
     }
 
     /**
@@ -323,18 +343,31 @@ class DatasetsController extends Controller
     }
 
     /**
-     * Receives unsorted array from database and makes it json-like view
+     * Receives unsorted (but ordered by ea name, dataset name and resource name)
+     * array from database and makes it json-like view
+     * (for general list)
+     *
+     * also writes statistic into external array through "&"
      */
-    private function sortDatasets($arrayOfDatasetsFromDB) {
+    private function sortDatasetsAndWriteStatistic($arrayOfDatasetsFromDB, &$actualStatistic) {
         $arrayOfDatasetsFromDB = json_decode(json_encode($arrayOfDatasetsFromDB), true);
-
+        //for statistic
+        $amountOfExecutiveAuthorities = 0;
+        $amountOfDatasets = 0;
+        $amountOfResources = 0;
+        $amountOfDebtors = 0;
+        $amountOfReminders = 0;
+        $amountOfInactives = 0;
         $outputArray["executive_authorities"] = [];
+
         $previousExecutiveAuthorityID = null;
         $currentExecutiveAuthorityID = null;
         $currentExecutiveAuthorityArrayIndex = -1;
+
         $previousDatasetID = null;
         $currentDatasetID = null;
         $currentDatasetArrayIndex = -1;
+
         $previousResourceID = null;
         $currentResourceID = null;
         $currentResourceArrayIndex = -1;
@@ -348,6 +381,7 @@ class DatasetsController extends Controller
             if ($currentExecutiveAuthorityID != $previousExecutiveAuthorityID) {
                 $currentExecutiveAuthorityArrayIndex += 1;
                 $currentDatasetArrayIndex = -1;
+                $amountOfExecutiveAuthorities += 1;
 
                 $outputArray["executive_authorities"][] = [
                     'id' => $row["executive_authority_id"],
@@ -360,6 +394,21 @@ class DatasetsController extends Controller
             if ($currentDatasetID != $previousDatasetID) {
                 $currentDatasetArrayIndex += 1;
                 $currentResourceArrayIndex = -1;
+                $amountOfDatasets += 1;
+
+                switch ($row["dataset_type"]) {
+                    case 'debtor':
+                        $amountOfDebtors += 1;
+                        break;
+                    case 'reminder':
+                        $amountOfReminders += 1;
+                        break;
+                    case 'inactive':
+                        $amountOfInactives += 1;
+                        break;
+                    default:
+                        break;
+                }
 
                 $outputArray
                     ["executive_authorities"][$currentExecutiveAuthorityArrayIndex]
@@ -367,9 +416,9 @@ class DatasetsController extends Controller
                     'id' => $row["dataset_id"],
                     'state' => $row["dataset_state"],
                     'title' => $row["dataset_title"],
-                    'last_updated_at' => $row["dataset_last_updated_at"],
+                    'last_updated_at' => $this->convertTimeToUkrLocale($row["dataset_last_updated_at"]),
                     'update_frequency' => $row["dataset_update_frequency"],
-                    'next_update_at' => $row["dataset_next_update_at"],
+                    'next_update_at' => $this->convertTimeToUkrLocale($row["dataset_next_update_at"]),
                     'days_to_update' => $row["dataset_days_to_update"],
                     'maintainer_name' => $row["dataset_maintainer_name"],
                     'maintainer_email' => $row["dataset_maintainer_email"],
@@ -380,6 +429,7 @@ class DatasetsController extends Controller
             //filling array with resources inside datasets
             if ($currentResourceID != $previousResourceID) {
                 $currentResourceArrayIndex += 1;
+                $amountOfResources += 1;
 
                 $outputArray
                     ["executive_authorities"][$currentExecutiveAuthorityArrayIndex]
@@ -400,10 +450,18 @@ class DatasetsController extends Controller
             $previousResourceID = $row["resource_id"];
         }
 
+        $actualStatistic["executive_authorities"] = $amountOfExecutiveAuthorities;
+        $actualStatistic["datasets"] = $amountOfDatasets;
+        $actualStatistic["resources"] = $amountOfResources;
+        $actualStatistic["debtors"] = $amountOfDebtors;
+        $actualStatistic["reminders"] = $amountOfReminders;
+        $actualStatistic["inactives"] = $amountOfInactives;
+
         return $outputArray;
     }
     /**
      * Receives unsorted array from 'datasets' table and makes it json-like view
+     * (for emails sending)
      */
     private function sortMaintainers($arrayOfDatasetsFromDB) {
         $arrayOfDatasetsFromDB = json_decode(json_encode($arrayOfDatasetsFromDB), true);
@@ -453,37 +511,31 @@ class DatasetsController extends Controller
     /**
      * returns array with statistic
      */
-    private function getStatistic($userId) {
-        $statistic = [];
-
-        $statistic["executive_authorities"] =
-            DB::table('executive_authorities')
-            ->where('user_id', '=', $userId)->count();
-
-        $statistic["datasets"] =
-            DB::table('datasets')
-            ->where('user_id', '=', $userId)->count();
-
-        $statistic["resources"] =
-            DB::table('resources')
-            ->where('user_id', '=', $userId)->count();
-
-        $statistic["debtor"] =
-            DB::table('datasets')
-            ->where('user_id', '=', $userId)
-            ->where('type', '=', 'debtor')->count();
-
-        $statistic["reminder"] =
-            DB::table('datasets')
-            ->where('user_id', '=', $userId)
-            ->where('type', '=', 'reminder')->count();
-
-        $statistic["inactive"] =
-            DB::table('datasets')
-            ->where('user_id', '=', $userId)
-            ->where('type', '=', 'inactive')->count();
-
-        return $statistic;
+    private function setStatistic($userId) {
+        Statistic::create([
+            "user_id" => $userId,
+            "executive_authorities" =>
+                DB::table('executive_authorities')
+                ->where('user_id', '=', $userId)->count(),
+            "datasets" =>
+                DB::table('datasets')
+                ->where('user_id', '=', $userId)->count(),
+            "resources" =>
+                DB::table('resources')
+                ->where('user_id', '=', $userId)->count(),
+            "debtors" =>
+                DB::table('datasets')
+                ->where('user_id', '=', $userId)
+                ->where('type', '=', 'debtor')->count(),
+            "reminders" =>
+                DB::table('datasets')
+                ->where('user_id', '=', $userId)
+                ->where('type', '=', 'reminder')->count(),
+            "inactives" =>
+                DB::table('datasets')
+                ->where('user_id', '=', $userId)
+                ->where('type', '=', 'inactive')->count(),
+        ]);
     }
 
     private function getWhereOperator($operatorName) {
@@ -497,6 +549,13 @@ class DatasetsController extends Controller
         ];
 
         return isset($equality[$operatorName]) ? $equality[$operatorName] : null;
+    }
+
+    private function convertTimeToUkrLocale($timeFromDb) {
+        $time = new Carbon($timeFromDb);
+        $time->tz = 'Europe/Kyiv';
+        $time = $time->format('d.m.Y H:i');
+        return $time;
     }
 
 

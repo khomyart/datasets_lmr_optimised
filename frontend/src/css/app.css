@@ -1,1 +1,105 @@
 /* app global css */
+
+.absolute-full div.scroll {
+  overflow: hidden;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+:root {
+  --footer-height: 70px;
+}
+.disable-interaction {
+  pointer-events: none;
+  user-select: none;
+}
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.content {
+  width: fit-content;
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+  padding: 0px 5px 30px 10px;
+}
+.q-inner-loading {
+  z-index: 1100;
+}
+
+.toolbar {
+  overflow: visible;
+  height: auto;
+  padding-left: 10px;
+}
+.filter-width-helper {
+  width: 1px;
+  position: absolute;
+  z-index: 1000;
+  border-left: 2px solid #a32cc7;
+  top: 0;
+  left: 0;
+}
+.filter {
+  width: fit-content;
+  position: sticky;
+  top: 0px;
+  z-index: 1000;
+  height: 80px;
+}
+div[name] {
+  cursor: col-resize;
+}
+.filter-separator {
+  padding: 0 5px;
+  height: 100%;
+}
+.vertical-line {
+  height: 100%;
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  width: 1px;
+}
+.content {
+  width: fit-content;
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+  padding: 0px 20px 30px 10px;
+}
+.items-container {
+  width: fit-content;
+}
+.items {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100px;
+}
+.footer {
+  min-height: var(--footer-height);
+  /* background-color: beige; */
+  display: flex;
+  align-items: center;
+  direction: row;
+  justify-content: space-between;
+}
