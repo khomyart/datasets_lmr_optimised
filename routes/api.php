@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DatasetsController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\MailController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +25,7 @@ Route::post("logout", [UserController::class, "logout"]);
 Route::middleware('api.authentication')->group(function () {
     Route::get("datasets/receive", [DatasetsController::class, "receive"]);
     Route::get("datasets/read", [DatasetsController::class, "read"]);
-    Route::get("datasets/sendMail", [DatasetsController::class, "sendMail"]);
+    Route::get("datasets/send_mail", [MailController::class, "sendMail"]);
+    Route::get("datasets/get_report", [ReportController::class, "getReport"]);
 });
 

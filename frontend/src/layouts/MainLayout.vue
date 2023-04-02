@@ -3,7 +3,14 @@
     <q-header class="bg-white">
       <q-toolbar class="text-primary q-ml-sm">
         <FilterComponent @change-filter-mode="onChangedFieldFilterMode" />
-        <q-btn flat icon="receipt_long" round class="filter-button q-ml-sm">
+        <q-btn
+          :loading="store.dataset.dialogs.report.isConfirmationLoading"
+          @click="store.dataset.getReport()"
+          flat
+          icon="receipt_long"
+          round
+          class="filter-button q-ml-sm"
+        >
           <q-tooltip anchor="bottom middle" :offset="[0, 0]" class="text-body2">
             Сформувати звіт
           </q-tooltip>
@@ -410,6 +417,14 @@ const menuItems = [
     mode: "debtor",
     onClick: () => {
       store.app.filters.data.datasets.selectedParams.mode = "debtor";
+    },
+  },
+  {
+    name: "Не оновлюються",
+    icon: "update_disabled",
+    mode: "inactive",
+    onClick: () => {
+      store.app.filters.data.datasets.selectedParams.mode = "inactive";
     },
   },
 ];

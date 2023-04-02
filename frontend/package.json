@@ -1,8 +1,7 @@
 {
   "name": "datasets-lmr-optimised",
   "version": "0.0.1",
-  "description": "A Quasar Project",
-  "productName": "Quasar App",
+  "productName": "Набори даних Луцької міської ради",
   "author": "Valentyn Tykhomyrov <khomyart@gmail.com>",
   "private": true,
   "scripts": {

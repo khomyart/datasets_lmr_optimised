@@ -23,6 +23,7 @@
 
           <div class="q-mr-sm">Тип:</div>
           <div
+            class="q-mr-md"
             :class="{
               'custom-badge-success': props.item.type == 'normal',
               'custom-badge-warning': props.item.type == 'reminder',
@@ -31,6 +32,36 @@
             }"
           >
             {{ type }}
+          </div>
+          <div class="q-mr-sm">
+            <a
+              target="_blank"
+              :href="`${appStore.appURL}/api/3/action/package_search?q=id:${props.item.id}`"
+              >API</a
+            >
+          </div>
+        </div>
+        <div
+          class="row col-12 q-mt-md"
+          v-if="props.item.description != props.item.title"
+        >
+          <div class="row col-12 q-mb-sm" style="text-decoration: underline">
+            Опис:
+          </div>
+          <div class="row col-12 q-mb-sm">
+            <div>
+              {{ props.item.description }}
+            </div>
+          </div>
+        </div>
+        <div class="row col-12 q-mt-md" v-if="props.item.purpose != ''">
+          <div class="row col-12 q-mb-sm" style="text-decoration: underline">
+            Підстава та призначення:
+          </div>
+          <div class="row col-12 q-mb-sm">
+            <div>
+              {{ props.item.purpose }}
+            </div>
           </div>
         </div>
         <div class="row col-12 q-mt-md">
@@ -132,7 +163,6 @@ const updateFrequency = computed(() => {
       break;
     case "more than once a day":
       updateFrequency = "більше одного разу на день";
-
       break;
     case "once a day":
       updateFrequency = "щодня";

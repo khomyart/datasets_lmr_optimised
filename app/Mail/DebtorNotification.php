@@ -18,7 +18,8 @@ class DebtorNotification extends Mailable
      * Create a new message instance.
      */
     public function __construct(
-        public $maintainer
+        public $maintainer,
+        public $datasourceUrl
     )
     {
         //
@@ -30,7 +31,7 @@ class DebtorNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: new Address('asu@lutskrada.gov.ua', 'Хмель Наталія'),
+            from: new Address('asu@lutskrada.gov.ua', 'Управління інформаційно-комунікаційних технологій Луцької міської ради'),
             subject: 'Відкриті данні (нагадування)',
         );
     }
@@ -41,7 +42,8 @@ class DebtorNotification extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.debtor',
+            html: 'emails.debtor',
+            text: 'emails.debtor-text'
         );
     }
 

@@ -34,6 +34,10 @@ export const useDatasetStore = defineStore("dataset", {
         isConfirmationLoading: false,
         isReportShown: false,
       },
+      report: {
+        isConfirmationShown: false,
+        isConfirmationLoading: false,
+      },
     },
     data: {
       isItemsLoading: false,
@@ -88,28 +92,28 @@ export const useDatasetStore = defineStore("dataset", {
     },
 
     receive() {
-      // this.items = [];
-      // this.data.isItemsLoading = true;
-      // this.data.isReceivingItemsLoading = true;
-      // console.log("received items");
-      // api
-      //   .get(`/${sectionName}/receive`)
-      //   .then(() => {
-      //     this.read();
-      //   })
-      //   .catch((err) => {
-      //     appConfigStore.catchRequestError(err);
-      //     this.data.isItemsLoading = false;
-      //     this.data.isReceivingItemsLoading = false;
-      //   })
-      //   .finally(() => {});
+      this.items = [];
+      this.data.isItemsLoading = true;
+      this.data.isReceivingItemsLoading = true;
+      console.log("received items");
+      api
+        .get(`/${sectionName}/receive`)
+        .then(() => {
+          this.read();
+        })
+        .catch((err) => {
+          appConfigStore.catchRequestError(err);
+          this.data.isItemsLoading = false;
+          this.data.isReceivingItemsLoading = false;
+        })
+        .finally(() => {});
     },
 
     sendMail(mailType) {
       this.dialogs.email.isConfirmationLoading = true;
       this.dialogs.email.isConfirmationShown = false;
       api
-        .get(`/${sectionName}/sendMail?mode=${mailType}`)
+        .get(`/${sectionName}/send_mail?mode=${mailType}`)
         .then((res) => {
           this.emailReport = res.data;
           this.dialogs.email.isReportShown = true;
@@ -119,7 +123,36 @@ export const useDatasetStore = defineStore("dataset", {
         })
         .finally(() => {
           this.dialogs.email.isConfirmationLoading = false;
-          this.dialogs.email.isConfirmationShown = false;
+        });
+    },
+
+    getReport() {
+      this.dialogs.report.isConfirmationLoading = true;
+      this.dialogs.email.isConfirmationShown = false;
+      api
+        .get(`/${sectionName}/get_report`, {
+          responseType: "blob",
+        })
+        .then((res) => {
+          // create file link in browser's memory
+          const href = URL.createObjectURL(res.data);
+
+          // create "a" HTML element with href to file & click
+          const link = document.createElement("a");
+          link.href = href;
+          link.setAttribute("download", "report_datasets.xlsx");
+          document.body.appendChild(link);
+          link.click();
+
+          // clean up "a" element & remove ObjectURL
+          document.body.removeChild(link);
+          URL.revokeObjectURL(href);
+        })
+        .catch((err) => {
+          appConfigStore.catchRequestError(err);
+        })
+        .finally(() => {
+          this.dialogs.report.isConfirmationLoading = false;
         });
     },
   },
