@@ -9,6 +9,7 @@ use App\Models\Dataset;
 use App\Models\Resource;
 use App\Models\Statistic;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 use App\Helpers\AuthApi;
@@ -28,25 +29,43 @@ class DatasetsController extends Controller
     public function receive(Request $request) {
         //getting auth information
         $auth = AuthAPI::isAuthenticated($request->bearerToken(), $request->ip());
+        $userId = $auth->user->id;
+
         //removing old datasets information, for current authenticated user
-        DB::table('executive_authorities')->where('user_id', '=', $auth->user->id)->delete();
-        DB::table('datasets')->where('user_id', '=', $auth->user->id)->delete();
-        DB::table('resources')->where('user_id', '=', $auth->user->id)->delete();
-        DB::table('statistics')->where('user_id', '=', $auth->user->id)->delete();
+        DB::table('executive_authorities')->where('user_id', '=', $userId)->delete();
+        DB::table('datasets')->where('user_id', '=', $userId)->delete();
+        DB::table('resources')->where('user_id', '=', $userId)->delete();
+        DB::table('statistics')->where('user_id', '=', $userId)->delete();
+
+        // creating request context
+        $opts = [
+            "ssl" => [
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+            ],
+        ];
+        $context = stream_context_create($opts);
+        // $arrContextOptions=array(
+        //     "ssl"=>array(
+        //         "verify_peer"=>false,
+        //         "verify_peer_name"=>false,
+        //     ),
+        // );
+        // $context = stream_context_create($arrContextOptions);
 
         //setting executive_authorities
-        $organizationsFromAPI = json_decode(file_get_contents('https://data.lutskrada.gov.ua/api/3/action/organization_list?all_fields=true'), true);
+        $organizationsFromAPI = json_decode(file_get_contents("{$this->datasourceUrl}/api/3/action/organization_list?all_fields=true", false, $context), true);
         foreach ($organizationsFromAPI['result'] as $key => $organization) {
             ExecutiveAuthority::create([
                 'id' => $organization['id'],
-                'user_id' => $auth->user->id,
+                'user_id' => $userId,
                 'name' => $organization['name'],
                 'display_name' => $organization['display_name'],
             ]);
         }
 
         //setting datasets
-        $datasetsFromAPI = json_decode(file_get_contents('https://data.lutskrada.gov.ua/api/3/action/package_search?q=*:*&rows=99999'), true);
+        $datasetsFromAPI = json_decode(file_get_contents("{$this->datasourceUrl}/api/3/action/package_search?q=*:*&rows=99999", false, $context), true);
         foreach ($datasetsFromAPI['result']['results'] as $key => $dataset) {
             $nextDatasetUpdateDate =
                 $this->getDatasetNextUpdateDate($dataset["update_frequency"], $dataset["metadata_modified"]);
@@ -56,7 +75,7 @@ class DatasetsController extends Controller
 
             Dataset::create([
                 'id' => $dataset["id"],
-                'user_id' => $auth->user->id,
+                'user_id' => $userId,
                 'executive_authority_name' => $dataset["organization"]["name"],
                 'state' => $dataset["state"],
                 'name' => $dataset["name"],
@@ -78,7 +97,7 @@ class DatasetsController extends Controller
             foreach ($dataset["resources"] as $key => $resource) {
                 Resource::create([
                     'id' => $resource["id"],
-                    'user_id' => $auth->user->id,
+                    'user_id' => $userId,
                     'dataset_id' => $resource["package_id"],
                     'state' => $resource["state"],
                     'name' => $resource["name"],
@@ -90,7 +109,7 @@ class DatasetsController extends Controller
             }
         }
 
-        $this->setStatistic($auth->user->id);
+        $this->setStatistic($userId);
     }
 
     /**
@@ -273,11 +292,17 @@ class DatasetsController extends Controller
         $combinedResourceString = '';
 
         foreach($resources as $key => $resource) {
-            $combinedResourceString = $combinedResourceString.$resource["format"];
 
-            if (next($resources) && $resource["format"] != ''
-            ) {
-                $combinedResourceString = $combinedResourceString.', ';
+            if ($key == array_key_first($resources)) {
+                $combinedResourceString = $resource["format"];
+            } else {
+
+                if (Str::contains($combinedResourceString, $resource["format"]) == false) {
+                    //if first item was actualy format, not a " ", or empty string at all
+                    if (strlen($combinedResourceString) > 1) {
+                        $combinedResourceString = "{$combinedResourceString}, {$resource["format"]}";
+                    }
+                }
             }
         }
 

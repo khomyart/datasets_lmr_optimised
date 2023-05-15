@@ -1,7 +1,5 @@
 import { boot } from "quasar/wrappers";
 import axios from "axios";
-import { useUserStore } from "src/stores/userStore";
-const userStore = useUserStore();
 // Be careful when using SSR for cross-request state pollution
 // due to creating a Singleton instance here;
 // If any client changes this (global) instance, it might be a
@@ -15,8 +13,18 @@ const api = axios.create({
     Accept: "application/json",
   },
 });
+
 api.interceptors.request.use((config) => {
-  config.headers.Authorization = `Bearer ${userStore.data.token.value}`;
+  let userData = JSON.parse(sessionStorage.getItem("data"));
+  let token;
+
+  if (sessionStorage.getItem("data") != undefined) {
+    token = userData.token;
+  } else {
+    token = "";
+  }
+
+  config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 

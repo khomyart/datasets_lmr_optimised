@@ -10,7 +10,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Mail\Mailables\Address;
 
-class DebtorNotification extends Mailable
+class DebtorReportNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -18,12 +18,8 @@ class DebtorNotification extends Mailable
      * Create a new message instance.
      */
     public function __construct(
-        public $maintainer,
-        public $datasourceUrl
-    )
-    {
-        //
-    }
+        public $result
+    ) {}
 
     /**
      * Get the message envelope.
@@ -32,7 +28,7 @@ class DebtorNotification extends Mailable
     {
         return new Envelope(
             from: new Address('asu@lutskrada.gov.ua', 'Управління інформаційно-комунікаційних технологій Луцької міської ради'),
-            subject: 'Відкриті данні (протермінування)',
+            subject: 'Звіт про розсилку (протермінування)',
         );
     }
 
@@ -42,8 +38,7 @@ class DebtorNotification extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.debtor',
-            text: 'emails.debtor-text'
+            text: 'emails.debtor-report-text',
         );
     }
 

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DebtorNotification;
 use App\Mail\ReminderNotification;
+use App\Mail\DebtorReportNotification;
+use App\Mail\ReminderReportNotification;
 use Carbon\Carbon;
 
 use App\Helpers\AuthApi;
@@ -65,6 +67,15 @@ class MailController extends Controller
                 $result["error"][] = $maintainer;
             }
         }
+
+        if ($data["mode"] == 'debtor') {
+            $reportNotificator = new DebtorReportNotification($result);
+        }
+        if ($data["mode"] == 'reminder') {
+            $reportNotificator = new ReminderReportNotification($result);
+        }
+
+        Mail::to("asu@lutskrada.gov.ua")->send($reportNotificator);
 
         return response($result, 200);
     }

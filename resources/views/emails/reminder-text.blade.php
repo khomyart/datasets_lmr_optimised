@@ -1,15 +1,12 @@
-<p>
-    Доброго дня, {{$maintainer["name"]}}!
-</p>
-<p>
-    Нагадування про необхідність оновлення наборів даних: <br>
-    (через наближення кінцевого терміну оновлення)
-</p>
+Доброго дня, {{$maintainer["name"]}}!
+
+Нагадування про необхідність оновлення наборів даних:
+(через наближення кінцевого терміну оновлення)
 
 @foreach($maintainer["datasets"] as $dataset)
-<p>{{$loop->index + 1}}. {{$dataset["title"]}}
-    (кінцева дата оновлення: {{$dataset["next_update_at"]}},
-    днів залишилось: {{$dataset["days_to_update"]}},
-    посилання: <a>{{$datasourceUrl.$dataset['id']}}</a>)</p>
+{{$loop->index + 1}}. {{$dataset["title"]}}
+    - кінцева дата оновлення: {{$dataset["next_update_at"]}};
+    - днів залишилось: {{$dataset["days_to_update"]}};
+    - посилання: {{$datasourceUrl.$dataset['id']}};
 @endforeach
 

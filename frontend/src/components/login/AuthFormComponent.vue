@@ -6,7 +6,6 @@
   >
     <q-input
       outlined
-      color="primary"
       class="q-mb-lg"
       type="email"
       label="Пошта"
@@ -14,7 +13,6 @@
     />
     <q-input
       outlined
-      color="primary"
       v-model="userData.password"
       class="q-mb-lg"
       :type="isPwd ? 'password' : 'text'"
@@ -30,11 +28,11 @@
     </q-input>
     <div class="col-12 flex justify-center">
       <q-btn
+        color="primary"
         label="Увійти"
         :loading="isLoading"
         style="width: 50%"
         type="submit"
-        color="red"
       />
     </div>
   </q-form>

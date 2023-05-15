@@ -73,10 +73,8 @@
 
             <div class="col-5">Частота: {{ updateFrequency }}</div>
           </div>
-          <div class="row col-12">
-            <div class="col-5" v-if="props.item.type != 'inactive'">
-              Наступне: {{ props.item.next_update_at }}
-            </div>
+          <div class="row col-12" v-if="props.item.type != 'inactive'">
+            <div class="col-5">Наступне: {{ props.item.next_update_at }}</div>
             <div class="col-5">
               {{ nextUpdateDateLabel }}
               {{ Math.abs(props.item.days_to_update) }}
