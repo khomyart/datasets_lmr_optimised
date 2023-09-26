@@ -14,6 +14,7 @@ use App\Helpers\AuthApi;
 class ReportController extends Controller
 {
     public $datasourceUrl = 'https://data.lutskrada.gov.ua';
+    const DAYS_TO_REMIND_ABOUT_DATASET_UPDATE = 7;
 
     public function getReport(Request $request) {
         $auth = AuthAPI::isAuthenticated($request->bearerToken(), $request->ip());
@@ -27,6 +28,9 @@ class ReportController extends Controller
             'datasets.update_frequency as accrualPeriodicity',
             'datasets.tags as keyword',
             'datasets.purpose as purpose',
+            'datasets.type as type',
+            'datasets.next_update_at as nextUpdateDate',
+            'datasets.days_to_update as daysToUpdate',
             //landingPage
             'datasets.formats as distributionFormat',
             'executive_authorities.display_name as publisherPrefLabel',
@@ -43,8 +47,8 @@ class ReportController extends Controller
         ])->get()->toArray();
 
         $dataForXlsx = [
-            ["identifier", "title", "description", "accrualPeriodicity", "keyword", "purpose", "landingPage", "distributionFormat", "publisherPrefLabel", "publisherIdentifier", "contactPointFn", "contactPointHasEmail"],
-            ["Ідентифікатор", "Назва", "Опис", "Частота оновлень", "Ключові слова", "Підстава та призначення збору інформації", "Посилання на сторінку набору даних", "Формати ресурсів", "Назва розпорядника", "Ідентифікатор розпорядника", "Відповідальна особа", "Email відповідальної особи"],
+            ["identifier", "title", "description", "accrualPeriodicity", "keyword", "purpose", "landingPage", "distributionFormat", "publisherPrefLabel", "publisherIdentifier", "contactPointFn", "contactPointHasEmail", "|", "type", "nextUpdateDate", "daysToUpdate"],
+            ["Ідентифікатор", "Назва", "Опис", "Частота оновлень", "Ключові слова", "Підстава та призначення збору інформації", "Посилання на сторінку набору даних", "Формати ресурсів", "Назва розпорядника", "Ідентифікатор розпорядника", "Відповідальна особа", "Email відповідальної особи", "|", "Тип", "Наступна дата оновлення", "Днів до оновлення"],
         ];
 
         $datasets = json_decode(json_encode($datasets), true);
@@ -63,6 +67,10 @@ class ReportController extends Controller
                 $dataset["publisherIdentifier"],
                 $dataset["contactPointFn"],
                 $dataset["contactPointHasEmail"],
+                "|",
+                $dataset["type"],
+                $dataset["nextUpdateDate"],
+                $dataset["daysToUpdate"],
             ];
         }
 

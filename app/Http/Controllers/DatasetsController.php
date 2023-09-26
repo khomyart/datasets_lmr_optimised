@@ -45,13 +45,6 @@ class DatasetsController extends Controller
             ],
         ];
         $context = stream_context_create($opts);
-        // $arrContextOptions=array(
-        //     "ssl"=>array(
-        //         "verify_peer"=>false,
-        //         "verify_peer_name"=>false,
-        //     ),
-        // );
-        // $context = stream_context_create($arrContextOptions);
 
         //setting executive_authorities
         $organizationsFromAPI = json_decode(file_get_contents("{$this->datasourceUrl}/api/3/action/organization_list?all_fields=true", false, $context), true);
