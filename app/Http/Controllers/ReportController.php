@@ -47,7 +47,7 @@ class ReportController extends Controller
         ])->get()->toArray();
 
         $dataForXlsx = [
-            ["identifier", "title", "description", "accrualPeriodicity", "keyword", "purpose", "landingPage", "distributionFormat", "publisherPrefLabel", "publisherIdentifier", "contactPointFn", "contactPointHasEmail", "|", "type", "nextUpdateDate", "daysToUpdate"],
+            ["id", "title", "description", "accrualPeriodicity", "keyword", "purpose", "landingPage", "distributionFormat", "publisherName", "publisherId", "contactPointName", "contactPointEmail", "|", "type", "nextUpdateDate", "daysToUpdate"],
             ["Ідентифікатор", "Назва", "Опис", "Частота оновлень", "Ключові слова", "Підстава та призначення збору інформації", "Посилання на сторінку набору даних", "Формати ресурсів", "Назва розпорядника", "Ідентифікатор розпорядника", "Відповідальна особа", "Email відповідальної особи", "|", "Тип", "Наступна дата оновлення", "Днів до оновлення"],
         ];
 
